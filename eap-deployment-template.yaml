@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tmx-eap-app
+  labels:
+    app: tmx-eap-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tmx-eap-app
+  template:
+    metadata:
+      labels:
+        app: tmx-eap-app
+    spec:
+      imagePullSecrets:
+        - name: redhat-pull-secret
+      containers:
+        - name: tmx-eap-app
+          image: "registry.redhat.io/jboss-eap-7/eap73-openjdk11-openshift-rhel8:7.3.10-2"
+          ports:
+            - containerPort: 8080    # Application port
+            - containerPort: 9990    # Management port          
+          env:
+            - name: EAP_USER
+              value: "admin"
+            - name: EAP_PASSWORD
+              value: "admin"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /opt/eap/standalone/configuration/standalone-openshift.xml
+              subPath: standalone-openshift.xml
+      volumes:
+        - name: config-volume
+          configMap:
+            name: custom-standalone-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tmx-eap-app
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: tmx-eap-app
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: tmx-eap-app-route
+spec:
+  to:
+    kind: Service
+    name: tmx-eap-app
+  port:
+    targetPort: "8080"
+  tls:
+    termination: edge
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tmx-eap-app-mgmt
+spec:
+  ports:
+    - protocol: TCP
+      port: 9990
+      targetPort: 9990
+  selector:
+    app: tmx-eap-app
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: tmx-eap-app-mgmt-route
+spec:
+  to:
+    kind: Service
+    name: tmx-eap-app-mgmt
+  port:
+    targetPort: "9990"
+  tls:
+    termination: edge
