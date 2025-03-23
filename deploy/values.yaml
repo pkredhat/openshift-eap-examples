@@ -1,0 +1,16 @@
+# Default values for deploy.
+# replicaCount: 1
+
+image:
+  repository: registry.redhat.io/jboss-eap-7/eap73-openjdk11-openshift-rhel8
+  tag: 7.3.10-2
+  pullSecret: redhat-pull-secret
+
+app:
+  name: tmx-eap-app
+  user: admin
+  password: admin
+
+ports:
+  app: 8080
+
